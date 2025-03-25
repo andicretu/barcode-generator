@@ -1,19 +1,25 @@
-
 import type { BarcodeConfig } from "./types";
-  
-  export function formatDate(date: Date): string {
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+import fs from "fs/promises";
+import path from "path";
+
+const SEQUENCE_PATH = path.resolve("last-sequence.json");
+
+export async function getBarcodeConfig(): Promise<BarcodeConfig> {
+  // Read last used number
+  let lastUsed = 0;
+  try {
+    const data = await fs.readFile(SEQUENCE_PATH, "utf-8");
+    const parsed = JSON.parse(data);
+    lastUsed = parsed.lastUsed ?? 0;
+  } catch (err) {
+    lastUsed = 0;
   }
-  
-  export const barcodeConfig: BarcodeConfig = {
+
+  return {
     clientCode: "DK010",
     panelCode: "APVAB",
     count: 10,
     outputDir: "./output/barcodes",
-    startNumber: 1,
-    dateFormat: formatDate(new Date())
+    startNumber: lastUsed + 1,
   };
-  
+}

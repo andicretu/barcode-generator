@@ -10,6 +10,24 @@ import { createCanvas } from "canvas";
 import type { BarcodeConfig } from "./types"; //configuration
 
 
+const SEQUENCE_PATH = path.resolve("last-sequence.json");
+
+//get last used bar code sequence
+async function getLastUsedNumber(): Promise<number> {
+  try {
+    const data = await fs.readFile(SEQUENCE_PATH, "utf-8");
+    const parsed = JSON.parse(data);
+    return parsed.lastUsed ?? 0;
+  } catch (err) {
+    return 0;
+  }
+}
+// write the last used number to file
+async function updateLastUsedNumber(lastUsed: number): Promise<void> {
+  const data = JSON.stringify({ lastUsed }, null, 2);
+  await fs.writeFile(SEQUENCE_PATH, data);
+}
+
 // Ensure alphanumeric characters only
 function validateAlphaNumeric(input: string): boolean {
   return /^[A-Za-z0-9]+$/.test(input);
@@ -22,20 +40,12 @@ function generateSampleID(prefix: string, index: number): string {
   return `${prefix}${paddedIndex}`;
 }
 
-// Format date as DD/MM/YYYY
-function formatDate(date: Date): string {
-  const day = date.getDate().toString().padStart(2, "0");
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const year = date.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-
 // Create barcode SVG string
 function createBarcodeSVG(
   clientCode: string,
   sampleID: string,
   panelCode: string,
-  samplingDate: string
+  //samplingDate: string
 ): string {
   // Create a canvas for JsBarcode
   const canvas = createCanvas(600, 300);
@@ -60,7 +70,7 @@ function createBarcodeSVG(
   const width = Math.round(8.5 * 37.8); // 8.5cm to pixels
   const height = Math.round(1.4 * 37.8); // 1.4cm to pixels
 
-  const background = svgDoc.createElement("rect");
+  const background = svgDoc.createElement("rect"); //add white background
     background.setAttribute("x", "0");
     background.setAttribute("y", "0");
     background.setAttribute("width", width.toString());
@@ -70,44 +80,42 @@ function createBarcodeSVG(
   svgRoot.setAttribute("width", width.toString());
   svgRoot.setAttribute("height", height.toString());
   svgRoot.setAttribute("viewBox", `0 0 ${width} ${height}`);
-  svgRoot.setAttribute("style", "border: 1px solid red;");
   svgRoot.appendChild(background);
-
   
   // Convert canvas to data URL and extract base64 image data
   const barcodeDataURL = canvas.toDataURL("image/png");
   
   // Add the barcode image
   const image = svgDoc.createElement("image");
-  image.setAttribute("x", "10");
+  image.setAttribute("x", "120");
   image.setAttribute("y", "0");
   image.setAttribute("width", Math.round(width * 0.7).toString());
-  image.setAttribute("height", "20");
+  image.setAttribute("height", "30");
   image.setAttribute("href", barcodeDataURL);
   svgRoot.appendChild(image);
   
   // Add text elements for the data
   const barcodeText1 = svgDoc.createElement("text");
   barcodeText1.setAttribute("x", "10");
-  barcodeText1.setAttribute("y", (height - 25).toString());
+  barcodeText1.setAttribute("y", (height - 40).toString());
   barcodeText1.setAttribute("font-family", "Arial");
-  barcodeText1.setAttribute("font-size", "12");
+  barcodeText1.setAttribute("font-size", "10");
   barcodeText1.textContent = `Panel Code: ${panelCode}`;
   svgRoot.appendChild(barcodeText1);
   
   const barcodeText2 = svgDoc.createElement("text");
   barcodeText2.setAttribute("x", "10");
-  barcodeText2.setAttribute("y", (height - 14).toString());
+  barcodeText2.setAttribute("y", (height - 30).toString());
   barcodeText2.setAttribute("font-family", "Arial");
-  barcodeText2.setAttribute("font-size", "12");
-  barcodeText2.textContent = `Sampling Date: ${samplingDate}`;
+  barcodeText2.setAttribute("font-size", "10");
+  barcodeText2.textContent = `Sampling Date: `;
   svgRoot.appendChild(barcodeText2);
   
   const barcodeText3 = svgDoc.createElement("text");
-  barcodeText3.setAttribute("x", "10");
-  barcodeText3.setAttribute("y", (height - 2).toString());
+  barcodeText3.setAttribute("x", "190");
+  barcodeText3.setAttribute("y", (height - 14).toString());
   barcodeText3.setAttribute("font-family", "Arial");
-  barcodeText3.setAttribute("font-size", "12");
+  barcodeText3.setAttribute("font-size", "10");
   barcodeText3.textContent = barcodeText;
   svgRoot.appendChild(barcodeText3);
   
@@ -118,13 +126,14 @@ function createBarcodeSVG(
 
 // Main function to generate barcodes
 async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
+
+  const lastUsed = await getLastUsedNumber();
   const {
     clientCode,
     panelCode,
     count,
     outputDir,
-    startNumber = 1,
-    dateFormat
+    startNumber = lastUsed + 1,
   } = config;
   
   // Validate clientCode and panelCode
@@ -137,7 +146,7 @@ async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
   
   // Generate barcodes
   const barcodes: string[] = [];
-  const samplingDate = dateFormat || formatDate(new Date());
+  const samplingDate = "Sampling date:";
   
   for (let i = 0; i < count; i++) {
     const index = startNumber + i;
@@ -146,7 +155,7 @@ async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
     barcodes.push(barcode);
     
     // Create SVG for this barcode
-    const svg = createBarcodeSVG(clientCode, sampleID, panelCode, samplingDate);
+    const svg = createBarcodeSVG(clientCode, sampleID, panelCode);
     
     // Save the SVG file
     const filename = `${barcode.replace("|", "_")}.svg`;
@@ -175,17 +184,23 @@ async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
 // Example usage
 async function main() {
   try {
+    const lastUsed = await getLastUsedNumber();
+    console.log(`Last used number: ${lastUsed}`);
+    
     const barcodeConfig: BarcodeConfig = {
       clientCode: "DK010",
       panelCode: "APVAB",
       count: 10,
       outputDir: "./barcodes",
-      startNumber: 1,
-      dateFormat: formatDate(new Date()) // Today's date
+      startNumber: lastUsed + 1,
     };
     
     console.log("Generating barcodes...");
     const barcodes = await generateBarcodes(barcodeConfig);
+
+    const newLastUsed = (barcodeConfig.startNumber ?? 1) + barcodeConfig.count - 1;
+    await updateLastUsedNumber(newLastUsed);
+
     console.log(`Generated ${barcodes.length} barcodes.`);
     console.log("Barcodes saved to CSV file in the output directory.");
   } catch (error) {

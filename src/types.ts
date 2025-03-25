@@ -4,6 +4,5 @@ export interface BarcodeConfig {
     count: number;
     outputDir: string;
     startNumber?: number;
-    dateFormat: string;
   }
   
