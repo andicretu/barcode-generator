@@ -130,12 +130,12 @@ class BarcodeInfo {
   constructor(public readonly clientCode: string, public readonly sampleID: string){}
 
   toFileName(): string {
-    return `${this.clientCode}|${this.sampleID}.svg`;
+    return `${this.clientCode}_${this.sampleID}.svg`;
   }
 }
-// Main function to generate barcodes
-async function generateBarcodes(config: BarcodeConfig): Promise<BarcodeInfo[]> {
 
+// Generate barcode info
+async function generateBarcodeInfo(config: BarcodeConfig): Promise<BarcodeInfo[]> {
   const lastUsed = await getLastUsedNumber();
   const {
     clientCode,
@@ -144,16 +144,7 @@ async function generateBarcodes(config: BarcodeConfig): Promise<BarcodeInfo[]> {
     outputDir,
     startNumber = lastUsed + 1,
   } = config;
-  
-  // Validate clientCode and panelCode
-  if (!validateAlphaNumeric(clientCode) || !validateAlphaNumeric(panelCode)) {
-    throw new Error("Client code and panel code must contain only alphanumeric characters.");
-  }
-  
-  // Create output directory if it doesn't exist
-  await fs.mkdir(outputDir, { recursive: true });
-  
-  // Generate barcodes
+
   const barcodes: BarcodeInfo[] = [];
 
   const samplingDate = "Sampling date:";
@@ -163,8 +154,6 @@ async function generateBarcodes(config: BarcodeConfig): Promise<BarcodeInfo[]> {
     const sampleID = generateSampleID("A", index);
     const barcode = `${clientCode}|${sampleID}`;
     barcodes.push(new BarcodeInfo(clientCode, sampleID));
-    
-    // Create SVG for this barcode
     const svg = createBarcodeSVG(clientCode, sampleID, panelCode);
     
     // Save the SVG file
@@ -174,7 +163,15 @@ async function generateBarcodes(config: BarcodeConfig): Promise<BarcodeInfo[]> {
     console.log(`Generated barcode: ${barcode}`);
   }
   
-  // Create a CSV file of all generated barcodes for reference
+  return barcodes;
+}
+  
+  async function createBarcodeCSVFIle(
+  barcodes: BarcodeInfo[],
+  outputDir: string,
+  panelCode: string,
+  samplingDate: string
+){
   const csvContent = barcodes
     .map(barcode => {
       return `${barcode.clientCode},${barcode.sampleID},${panelCode},${samplingDate}`;
@@ -182,13 +179,24 @@ async function generateBarcodes(config: BarcodeConfig): Promise<BarcodeInfo[]> {
     .join("\n");
   
   const csvHeader = "ClientCode,SampleID,PanelCode,SamplingDate\n";
+
+  await fs.mkdir(outputDir, { recursive: true });
   await fs.writeFile(
     path.join(outputDir, "barcodes.csv"),
     csvHeader + csvContent
   );
-  
+
   return barcodes;
 }
+
+  // Validate clientCode and panelCode
+//if (!validateAlphaNumeric(clientCode) || !validateAlphaNumeric(panelCode)) {
+//  throw new Error("Client code and panel code must contain only alphanumeric characters.");
+//}
+
+// Create output directory if it doesn't exist
+
+
 
 // Example usage
 async function main() {
@@ -205,7 +213,18 @@ async function main() {
     };
     
     console.log("Generating barcodes...");
-    const barcodes = await generateBarcodes(barcodeConfig);
+    const barcodes = await generateBarcodeInfo(barcodeConfig);
+
+    function formatDate(date: Date): string {
+      const day = date.getDate().toString().padStart(2, "0");
+      const month = (date.getMonth() + 1).toString().padStart(2, "0");
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+
+    const labelCretaionDate = formatDate(new Date());; // or use formatDate(new Date())
+    await createBarcodeCSVFIle(barcodes, barcodeConfig.outputDir, barcodeConfig.panelCode, labelCretaionDate);
+
 
     const newLastUsed = (barcodeConfig.startNumber ?? 1) + barcodeConfig.count - 1;
     await updateLastUsedNumber(newLastUsed);
@@ -218,4 +237,4 @@ async function main() {
 }
 
 // Run the main function
-main();
+  main();
