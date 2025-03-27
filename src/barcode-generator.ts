@@ -58,7 +58,9 @@ function createBarcodeSVG(
     format: "CODE128",
     width: 2,
     height: 50,
-    displayValue: false
+    displayValue: false,
+    margin: 0
+
   });
   
   // Create SVG document for the full label
@@ -87,8 +89,8 @@ function createBarcodeSVG(
   
   // Add the barcode image
   const image = svgDoc.createElement("image");
-  image.setAttribute("x", "120");
-  image.setAttribute("y", "0");
+  image.setAttribute("x", "0");
+  image.setAttribute("y", "5");
   image.setAttribute("width", Math.round(width * 0.7).toString());
   image.setAttribute("height", "30");
   image.setAttribute("href", barcodeDataURL);
@@ -96,7 +98,7 @@ function createBarcodeSVG(
   
   // Add text elements for the data
   const barcodeText1 = svgDoc.createElement("text");
-  barcodeText1.setAttribute("x", "10");
+  barcodeText1.setAttribute("x", "220");
   barcodeText1.setAttribute("y", (height - 40).toString());
   barcodeText1.setAttribute("font-family", "Arial");
   barcodeText1.setAttribute("font-size", "10");
@@ -104,7 +106,7 @@ function createBarcodeSVG(
   svgRoot.appendChild(barcodeText1);
   
   const barcodeText2 = svgDoc.createElement("text");
-  barcodeText2.setAttribute("x", "10");
+  barcodeText2.setAttribute("x", "220");
   barcodeText2.setAttribute("y", (height - 30).toString());
   barcodeText2.setAttribute("font-family", "Arial");
   barcodeText2.setAttribute("font-size", "10");
@@ -112,8 +114,8 @@ function createBarcodeSVG(
   svgRoot.appendChild(barcodeText2);
   
   const barcodeText3 = svgDoc.createElement("text");
-  barcodeText3.setAttribute("x", "190");
-  barcodeText3.setAttribute("y", (height - 14).toString());
+  barcodeText3.setAttribute("x", "90");
+  barcodeText3.setAttribute("y", (height - 6).toString());
   barcodeText3.setAttribute("font-family", "Arial");
   barcodeText3.setAttribute("font-size", "10");
   barcodeText3.textContent = barcodeText;
@@ -124,8 +126,15 @@ function createBarcodeSVG(
   return serializer.serializeToString(svgDoc);
 }
 
+class BarcodeInfo {
+  constructor(public readonly clientCode: string, public readonly sampleID: string){}
+
+  toFileName(): string {
+    return `${this.clientCode}|${this.sampleID}.svg`;
+  }
+}
 // Main function to generate barcodes
-async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
+async function generateBarcodes(config: BarcodeConfig): Promise<BarcodeInfo[]> {
 
   const lastUsed = await getLastUsedNumber();
   const {
@@ -145,21 +154,22 @@ async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
   await fs.mkdir(outputDir, { recursive: true });
   
   // Generate barcodes
-  const barcodes: string[] = [];
+  const barcodes: BarcodeInfo[] = [];
+
   const samplingDate = "Sampling date:";
   
   for (let i = 0; i < count; i++) {
     const index = startNumber + i;
     const sampleID = generateSampleID("A", index);
     const barcode = `${clientCode}|${sampleID}`;
-    barcodes.push(barcode);
+    barcodes.push(new BarcodeInfo(clientCode, sampleID));
     
     // Create SVG for this barcode
     const svg = createBarcodeSVG(clientCode, sampleID, panelCode);
     
     // Save the SVG file
     const filename = `${barcode.replace("|", "_")}.svg`;
-    await fs.writeFile(path.join(outputDir, filename), svg);
+    await fs.writeFile(path.join(outputDir, barcodes[i]!.toFileName()), svg);
     
     console.log(`Generated barcode: ${barcode}`);
   }
@@ -167,8 +177,7 @@ async function generateBarcodes(config: BarcodeConfig): Promise<string[]> {
   // Create a CSV file of all generated barcodes for reference
   const csvContent = barcodes
     .map(barcode => {
-      const [clientCode, sampleID] = barcode.split("|");
-      return `${clientCode},${sampleID},${panelCode},${samplingDate}`;
+      return `${barcode.clientCode},${barcode.sampleID},${panelCode},${samplingDate}`;
     })
     .join("\n");
   
