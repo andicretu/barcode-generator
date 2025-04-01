@@ -1,4 +1,4 @@
-import type { BarcodeConfig } from "./types";
+import type { BarcodeConfig } from "./logic/types";
 import fs from "fs/promises";
 import path from "path";
 

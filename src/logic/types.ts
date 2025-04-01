@@ -1,3 +1,5 @@
+
+
 export interface BarcodeConfig {
     clientCode: string;
     panelCode: string;
