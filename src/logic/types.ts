@@ -5,6 +5,5 @@ export interface BarcodeConfig {
     panelCode: string;
     count: number;
     outputDir: string;
-    startNumber?: number;
   }
   

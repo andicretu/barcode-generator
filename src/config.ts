@@ -20,6 +20,5 @@ export async function getBarcodeConfig(): Promise<BarcodeConfig> {
     panelCode: "APVAB",
     count: 10,
     outputDir: "./output/barcodes",
-    startNumber: lastUsed + 1,
   };
 }

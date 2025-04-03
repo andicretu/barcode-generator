@@ -1,5 +1,5 @@
-export * from "./generateInfo";
+export * from "./generateBarcodeInfo";
 export * from "./validateConfig";
-export * from "./sequenceTracker";
+export * from "./sampleIDTracker";
 export * from "./types";
 export * from "./formatDate";

@@ -1,7 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 
-import type { BarcodeInfo } from "../logic/generateInfo"; // assuming BarcodeInfo is defined there
+import type { BarcodeInfo } from "../logic/generateBarcodeInfo";
 
 
 
@@ -15,14 +15,16 @@ export async function createBarcodeCSVFile(
       .map(barcode => {
         return `${barcode.clientCode},${barcode.sampleID},${panelCode},${samplingDate}`;
       })
-      .join("\n");
+      .join("\n") + "\n";
     
-    const csvHeader = "ClientCode,SampleID,PanelCode,SamplingDate\n";
+    const csvHeader = `ClientCode, SampleID, PanelCode, SamplingDate (${samplingDate})\n`;
+
+    const fullContent = `\n${csvHeader}${csvContent}`;
   
     await fs.mkdir(outputDir, { recursive: true });
-    await fs.writeFile(
+    await fs.appendFile(
       path.join(outputDir, "barcodes.csv"),
-      csvHeader + csvContent
+      fullContent
     );
   
     return barcodes;

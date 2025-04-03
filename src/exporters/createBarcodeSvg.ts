@@ -51,7 +51,7 @@ export function createBarcodeSVG(
   
   // Add the barcode image
   const image = svgDoc.createElement("image");
-  image.setAttribute("x", "0");
+  image.setAttribute("x", "5");
   image.setAttribute("y", "5");
   image.setAttribute("width", Math.round(width * 0.7).toString());
   image.setAttribute("height", "30");
@@ -60,18 +60,18 @@ export function createBarcodeSVG(
   
   // Add text elements for the data
   const barcodeText1 = svgDoc.createElement("text");
-  barcodeText1.setAttribute("x", "220");
+  barcodeText1.setAttribute("x", "235");
   barcodeText1.setAttribute("y", (height - 40).toString());
   barcodeText1.setAttribute("font-family", "Arial");
-  barcodeText1.setAttribute("font-size", "10");
+  barcodeText1.setAttribute("font-size", "9");
   barcodeText1.textContent = `Panel Code: ${panelCode}`;
   svgRoot.appendChild(barcodeText1);
   
   const barcodeText2 = svgDoc.createElement("text");
-  barcodeText2.setAttribute("x", "220");
+  barcodeText2.setAttribute("x", "235");
   barcodeText2.setAttribute("y", (height - 30).toString());
   barcodeText2.setAttribute("font-family", "Arial");
-  barcodeText2.setAttribute("font-size", "10");
+  barcodeText2.setAttribute("font-size", "9");
   barcodeText2.textContent = `Sampling Date: `;
   svgRoot.appendChild(barcodeText2);
   
@@ -79,7 +79,7 @@ export function createBarcodeSVG(
   barcodeText3.setAttribute("x", "90");
   barcodeText3.setAttribute("y", (height - 6).toString());
   barcodeText3.setAttribute("font-family", "Arial");
-  barcodeText3.setAttribute("font-size", "10");
+  barcodeText3.setAttribute("font-size", "9");
   barcodeText3.textContent = barcodeText;
   svgRoot.appendChild(barcodeText3);
   
