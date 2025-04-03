@@ -9,15 +9,15 @@ export async function createBarcodeCSVFile(
     barcodes: BarcodeInfo[],
     outputDir: string,
     panelCode: string,
-    samplingDate: string
+    printingDate: string
   ){
     const csvContent = barcodes
       .map(barcode => {
-        return `${barcode.clientCode},${barcode.sampleID},${panelCode},${samplingDate}`;
+        return `${barcode.clientCode},${barcode.sampleID},${panelCode},${printingDate}`;
       })
       .join("\n") + "\n";
     
-    const csvHeader = `ClientCode, SampleID, PanelCode, SamplingDate (${samplingDate})\n`;
+    const csvHeader = `ClientCode, SampleID, PanelCode, PrintingDate (${printingDate})\n`;
 
     const fullContent = `\n${csvHeader}${csvContent}`;
   
